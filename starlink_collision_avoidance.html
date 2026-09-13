@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>🛰️ Starlink 衛星自動碰撞迴避系統：深度技術報告</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.10/dist/katex.min.css">
+<style>
+  :root { --fg:#1f2328; --muted:#59636e; --border:#d1d9e0; --bg:#ffffff; --code:#f6f8fa; --accent:#0969da; }
+  * { box-sizing:border-box; }
+  body { margin:0; background:var(--bg); color:var(--fg);
+         font-family:"Noto Sans TC","Microsoft JhengHei","Segoe UI",system-ui,sans-serif;
+         line-height:1.75; }
+  main { max-width:980px; margin:0 auto; padding:48px 32px 96px; }
+  h1 { font-size:1.9em; border-bottom:1px solid var(--border); padding-bottom:.35em; }
+  h2 { font-size:1.45em; border-bottom:1px solid var(--border); padding-bottom:.3em; margin-top:2em; }
+  h3 { font-size:1.15em; margin-top:1.6em; }
+  a { color:var(--accent); text-decoration:none; }
+  a:hover { text-decoration:underline; }
+  table { border-collapse:collapse; width:100%; margin:1em 0; font-size:.95em; display:block; overflow-x:auto; }
+  th,td { border:1px solid var(--border); padding:6px 12px; text-align:left; vertical-align:top; }
+  th { background:var(--code); }
+  tr:nth-child(even) td { background:#fbfcfd; }
+  code { background:var(--code); padding:.15em .4em; border-radius:4px;
+          font-family:Consolas,"Courier New",monospace; font-size:.9em; }
+  pre { background:var(--code); padding:14px 16px; border-radius:8px; overflow-x:auto; }
+  pre code { background:none; padding:0; }
+  blockquote { border-left:4px solid var(--border); margin:1em 0; padding:.2em 1em; color:var(--muted); }
+  .mermaid { background:#fff; border:1px solid var(--border); border-radius:8px;
+              padding:16px; margin:1.2em 0; text-align:center; overflow-x:auto; }
+  .katex-display { overflow-x:auto; padding:.4em 0; }
+  .doc-meta { color:var(--muted); font-size:.85em; border:1px solid var(--border);
+               border-radius:8px; padding:8px 14px; margin-bottom:24px; }
+  @media print { main { max-width:100%; padding:0; } .doc-meta { display:none; } }
+</style>
+</head>
+<body>
+<main>
+  <div class="doc-meta">本頁由 <code>starlink_collision_avoidance.md</code> 自動產生（tools/build_html.py）。圖表與數學式需網路載入渲染函式庫。</div>
+  <article id="content">正在渲染文件…</article>
+</main>
+<script src="https://cdn.jsdelivr.net/npm/marked@12.0.2/marked.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/mermaid@10.9.1/dist/mermaid.min.js"></script>
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.10/dist/katex.min.js"></script>
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.10/dist/contrib/auto-render.min.js"></script>
+<script>
+const SOURCE = "# 🛰️ Starlink 衛星自動碰撞迴避系統：深度技術報告\n\n> **研究日期：** 2026-08-19 ｜ **資料來源：** SpaceX 官方文件、ESA、NASA、FCC 申報文件、AIAA 論文、Space.com、Breaking Defense、Payload Space 等\n\n---\n\n## 目錄\n\n1. [技術原理](#1-技術原理)\n2. [資料來源與聯合評估](#2-資料來源與聯合評估)\n3. [自動化層級](#3-自動化層級)\n4. [機動執行](#4-機動執行)\n5. [操作場景與案例研究](#5-操作場景與案例研究)\n6. [完整工作流程](#6-完整工作流程)\n7. [操作員介面](#7-操作員介面)\n8. [法規與國際框架](#8-法規與國際框架)\n9. [挑戰與爭議](#9-挑戰與爭議)\n10. [快速參考匯總](#快速參考匯總)\n\n---\n\n## 1. 技術原理\n\n### 1.1 軌道物理基礎\n\nStarlink 的碰撞規避系統建立在以下核心物理和數學模型之上：\n\n#### TLE/SGP4 vs. 高精度星歷（High-Fidelity Ephemeris）\n\n| 模型 | 精度 | 使用場景 |\n|------|------|---------|\n| TLE + SGP4（公開） | ~1–5 km | 公用太空域感知基礎，無協方差資訊，**不足以做精確碰撞決策** |\n| SpaceX 自有高精度數值積分星歷 | 次米至米級 | 實際碰撞規避決策、Stargaze 系統 |\n\nSpaceX 的高精度星歷考量以下攝動因素：\n- 非球形重力場（J2–J6 項）\n- 大氣阻力（含太陽活動變化）\n- 太陽輻射壓力（SRP）\n- 第三體攝動（月球/太陽）\n\n### 1.2 碰撞概率計算（Probability of Collision, Pₓ）\n\n```\nStep 1 ─ 最接近時刻（TCA, Time of Closest Approach）\nStep 2 ─ 協方差矩陣（6×6 位置＋速度不確定性）\nStep 3 ─ 硬體半徑（HBR = (D_primary + D_secondary) / 2）\nStep 4 ─ 碰撞概率積分\n```\n\n#### 解析法（快速篩選）— Foster / Patera 法\n\n在遭遇平面（encounter plane）積分聯合機率密度函數：\n\n$$P_c = \\frac{1}{2\\pi\\sigma_x\\sigma_y} \\iint_{A_{HBR}} \\exp\\left(-\\frac{x^2}{2\\sigma_x^2} - \\frac{y^2}{2\\sigma_y^2}\\right) dx\\,dy$$\n\n- Starlink 衛星的 **HBR ≈ 5–20 m**（視衛星姿態而定）\n- 此法速度快，每天可處理數萬個事件\n\n#### 蒙地卡羅法（高風險事件驗證）\n\n1. 對兩顆衛星的名義狀態向量加入隨機高斯雜訊（使用協方差矩陣的 Cholesky 分解）\n2. 生成數百萬條可能軌跡組合\n3. 統計相對距離 < HBR 的碰撞次數\n\n$$P_c = \\frac{\\text{碰撞次數}}{\\text{總樣本數}}$$\n\n### 1.3 Starlink 的 Pₓ 決策門檻\n\n| 門檻類型 | 數值 | 說明 |\n|---------|------|------|\n| 業界慣例 | 1×10⁻⁴（1/10,000） | 大多數機構使用的觸發規避門檻 |\n| **Starlink 正式門檻** | **3×10⁻⁷（約 1/3,000,000）** | SpaceX 官方聲稱的保守門檻 |\n| 較早文獻引用值 | 1×10⁻⁶（1/1,000,000） | 部分論文引用的較早數值 |\n\n> **🔴 重要**\n>\n> Starlink 的 Pₓ 門檻比業界慣例**嚴格約 100–330 倍**（依較早引用的 1×10⁻⁶ 或正式的 3×10⁻⁷ 計），這直接導致其規避機動次數遠高於其他運營商。\n\n---\n\n## 2. 資料來源與聯合評估\n\n### 2.1 主要追蹤資料來源\n\n#### 🔵 美國太空軍 18th Space Defense Squadron (18 SDS)\n- 維護美國太空監視網（SSN）——全球地面及太空感測器網絡\n- 透過 **Space-Track.org** 向全球運營商發布 **Conjunction Data Messages (CDMs)**\n- CDM 格式（CCSDS 502.0-B-1 標準）包含：TCA、miss distance、Pₓ、雙方協方差矩陣\n\n#### 🔴 LeoLabs（商業商）\n- 自有全球相位陣列雷達網絡，專注 LEO 高精度追蹤\n- SpaceX 使用 LeoLabs 的 LEOP（Launch and Early Orbit）服務\n- 提供獨立商業 CDM 和軌道目錄，作為政府追蹤的補充和交叉驗證\n\n#### 🟢 Stargaze（SpaceX 自研 SSA 系統）\n\nStargaze 是革命性的太空域感知系統，利用 **Starlink 星座本身**作為分布式感測器陣列：\n\n| 系統參數 | 數值 |\n|---------|------|\n| 感測器數量 | ~30,000 個星跡儀（star trackers） |\n| 每日觀測次數 | ~3,000 萬次「凌越」（transits） |\n| 600 km 以下物體覆蓋率 | ~50% |\n| 篩選結果回傳延遲 | **< 1 分鐘**（傳統系統需數小時） |\n| 服務對象 | 全球運營商（免費） |\n| 官方入口 | space-safety.starlink.com |\n\n**技術原理：** 星跡儀（原設計用於衛星定向）被轉用為分布式光學感測器，持續記錄附近軌道物體的凌越時間與軌跡，結合大量觀測資料進行精密軌道定軌。\n\n> **📌 註**\n>\n> **2025年實案：** 某第三方衛星執行未預告機動後，Stargaze 在 **5小時內** 偵測到新生威脅，Starlink 衛星隨即自主執行規避，成功保全安全。\n\n### 2.2 篩選距離門檻\n\n| 篩選類型 | 典型數值 |\n|---------|---------|\n| 初始篩選體積（Screening Box）| 徑向：5 km ／ 沿軌：25 km ／ 法向：5 km |\n| 高風險觸發（miss distance） | < 1 km |\n| 規避機動觸發（Pₓ） | **3×10⁻⁷** |\n\n---\n\n## 3. 自動化層級\n\n### 3.1 全自主運作：從設計之初即如此\n\nStarlink 並非「某一時刻切換至自動化」——人工管理數千顆衛星在物理上不可能，因此整個系統從 2019 年首批部署就設計為**完全自主**。\n\n| 決策層面 | 決策方式 | 人工角色 |\n|---------|---------|---------|\n| 個別衛星規避機動 | **🤖 全自動（無需人工批准）** | 無 |\n| 星座內部協調 | **🤖 全自動** | 無 |\n| 與外部運營商協調 | 地面值班員主導（email/電話） | 7×24小時待命值班員 |\n| 閾值和策略設定 | 人工定期調整 | SpaceX 工程師 |\n| 重大異常處理 | 人工介入 | 飛行控制團隊 |\n\n> **🔴 重要**\n>\n> **關鍵分工：** 機動的「**執行**」完全自動；跨運營商的「**協調**」仍依賴人工。\n\n---\n\n## 4. 機動執行\n\n### 4.1 推進系統規格\n\n#### 霍爾效應離子推進器（Hall-Effect Thruster, HET）\n\n| 參數 | Gen 1（v1.0/v1.5） | Gen 2（Mini/v2） |\n|------|---------|---------|\n| 推進劑 | **氪（Krypton, Kr）** | **氬（Argon, Ar）** |\n| 選擇原因 | 比氙便宜 90%+ | 豐度極高、成本幾近零 |\n| 比沖（Isp） | ~1,500–2,000 s | ~1,500–3,000 s |\n| 里程碑 | 首個使用氪的商業星座 | **全球首個使用氬的航天器** |\n\n### 4.2 機動特性\n\n| 參數 | 典型值 |\n|------|------|\n| 典型規避 ΔV | **0.5 – 3 m/s** |\n| 機動方向 | 主要為**沿軌方向（Along-Track）** |\n| 機動時機（TCA 前） | 數小時至數天前 |\n| 軌道高度調整量 | 數十至數百米 |\n\n**為何偏好沿軌機動：**\n沿軌 ΔV 改變衛星到達特定軌道點的「時刻」，在 TCA 時使相對位置大幅偏移（相對速度常達 10+ km/s），能以**最小燃料消耗實現最大 miss distance 增加**。\n\n### 4.3 機動規劃邏輯\n\n```\n1. 篩選   →  持續計算所有已知物體的 Pₓ\n2. 觸發   →  Pₓ 超過閾值 3×10⁻⁷\n3. 優化   →  計算最佳 ΔV（最大 miss distance × 最小燃料消耗）\n4. 協調   →  確保機動後不與其他 Starlink 衛星產生新衝突\n5. 執行   →  霍爾推進器自主點火\n6. 驗證   →  機動後重新計算 Pₓ，確認降至安全水平\n```\n\n---\n\n## 5. 操作場景與案例研究\n\n### 5.1 案例一：ESA Aeolus vs. Starlink-44（2019年9月2日）\n\n| 日期 | 事件 |\n|------|------|\n| 2019-08-28 | 18 SDS 發出聯合預警，Pₓ ~1/50,000，雙方均未計劃機動 |\n| 2019-08-29–09-01 | 更新資料顯示 Pₓ 急劇上升至 **1/1,000** |\n| 2019-09-01（晚） | SpaceX 值班系統**軟體漏洞（bug）** 導致工程師未收到後續更新 |\n| 2019-09-02（凌晨） | ESA 決定單方面執行規避，Aeolus 推進器點火，軌道提升 **350 m** |\n| 結果 | 成功規避；SpaceX 事後承認通訊系統漏洞 |\n\n**歷史意義：** 成為推動太空交通管理（STM）自動化協調的標誌性催化劑，暴露了跨運營商協調依賴電子郵件的系統性缺失。\n\n---\n\n### 5.2 案例二：Starlink vs. OneWeb（2021年4月）\n\nOneWeb 高管公開宣稱，一顆 OneWeb 衛星與 Starlink 衛星接近距離達 **60 m**，SpaceX 當時關閉了自動規避系統，OneWeb 被迫自行機動。SpaceX 向 FCC 提交文件否認存在危險接近，FCC 召集雙方開會後 OneWeb 同意更正聲明。\n\n**核心爭議：** 跨運營商之間「誰該機動」缺乏國際強制規則。\n\n---\n\n### 5.3 案例三：中國天宮空間站 vs. Starlink（2021年）\n\n| 時間 | 涉及衛星 | 情況 |\n|------|---------|------|\n| 2021-07-01 | Starlink-1095 | 衛星下降至約 382 km，形成近距接近 |\n| 2021-10-21 | Starlink-2305 | 衛星進行不可預測機動，中方稱難以評估軌道誤差 |\n\n中國援引《外太空條約》第 5 條向 UNOOSA 正式投訴；此事件成為各方在 UN COPUOS 辯論 STM 必要性的重要素材。\n\n---\n\n### 5.4 機動頻率統計（FCC 半年報告）\n\n| 半年報告期 | 機動次數 |\n|-----------|---------|\n| 2022/06–11 | ~12,500 |\n| 2022/12–2023/05 | ~25,000 |\n| 2023/12–2024/05 | ~50,000 |\n| 2024/06–11 | 50,666 |\n| 2024/12–2025/05 | **144,404** |\n| 2025/12–2026/05 | **207,152** |\n| **2026全年（估計）** | **~355,000+** |\n\n> **⚠️ 警告**\n>\n> 每顆衛星平均每年超過 **40 次**規避機動（約每週一次）。部分研究人員預測 2027–2028 年可能突破 **100 萬次/年**。\n\n---\n\n## 6. 完整工作流程\n\n````mermaid\nflowchart TD\n    A[\"📡 階段1：持續數據攝取\\n18 SDS CDMs · Stargaze · LeoLabs · 衛星自身GPS\"] --> B\n\n    B[\"🔍 階段2：風險篩選\\n篩選框過濾 → TCA計算 → Pₓ解析法（Foster/Patera）\\n高Pₓ → 蒙地卡羅驗證\"] --> C{Pₓ ≥ 3×10⁻⁷？}\n\n    C -- 否 --> D[\"✅ 持續監控\\n每日例行更新\"]\n    C -- 是 --> E\n\n    E[\"🧮 階段3：機動規劃\\n最優ΔV計算（最大miss dist × 最小燃料）\\n全星座衝突檢查\\n外部運營商通知（人工）\"] --> F\n\n    F[\"📡 階段4：指令上傳\\n自動生成機動指令 → 地面站上傳\\n衛星確認接收\"] --> G\n\n    G[\"🔥 階段5：推進器點火\\n霍爾推進器\\n沿軌方向 ΔV 0.5–3 m/s\\nTCA前數小時至數天\"] --> H\n\n    H[\"✔️ 階段6：機動後驗證\\n更新星歷 → 重新計算Pₓ\\n確認Pₓ降至安全水平\\n發布更新星歷至Space-Track/Stargaze\"]\n````\n\n### 6.1 時間窗口策略\n\n不同於傳統機構採用固定的 72h/48h/24h 決策窗口，Starlink 採用**滾動式近實時評估**：\n\n| 窗口 | Starlink 做法 |\n|------|-------------|\n| T-72h 至 T-48h | 接收 18 SDS 初始 CDM；列入監控清單 |\n| T-48h 至 T-24h | 更新 Pₓ；若升至閾值開始規劃機動 |\n| T-24h 至 T-6h | **主要機動執行窗口**（最優燃料效率） |\n| T-6h 以內 | 仍可執行緊急機動 |\n| T-5h（Stargaze） | 偵測第三方未通知機動並成功規避的實例 |\n\n---\n\n## 7. 操作員介面\n\n### 7.1 SpaceX Space Safety Platform\n\n**官方網址：** https://space-safety.starlink.com\n\n| 功能模組 | 說明 |\n|---------|------|\n| 星歷上傳 | 支援「確定性軌跡」和「假設軌跡（機動規劃測試）」兩種模式 |\n| 聯合篩選 | 高吞吐、低延遲；提交後 **< 1 分鐘**返回篩選結果 |\n| CDM 接收 | 接收對其衛星的所有聯合預警 |\n| 精度反饋 | 系統將提交星歷與 Stargaze 觀測值對比，提供軌道精度評估 |\n| 聯絡人管理 | 維護物體元資料和緊急聯絡資訊 |\n| API 存取 | RESTful API，支援自動化集成 |\n\n**接入方式：**\n- 完全**免費**，向所有衛星運營商開放\n- 申請信箱：space-safety-onboarding@spacex.com\n- 認證：Passkey（分暫存和正式環境）\n\n> **📌 註**\n>\n> SpaceX 未公開地面控制系統的具體架構或操作界面截圖（商業機密）。碰撞規避決策在地面自動化軟件中產生，指令自動排程上傳。\n\n---\n\n## 8. 法規與國際框架\n\n### 8.1 美國聯邦通訊委員會（FCC）\n\n| 要求 | 具體內容 |\n|------|---------|\n| 半年報告 | 必須報告機動次數、衛星故障數、離軌情況 |\n| **5年離軌規定** | 2022年9月起，任務結束後 **5年內** 必須離軌（取代舊有25年規定） |\n| 人員傷亡風險 | 再入大氣層碎片造成人員傷亡風險 < 1/10,000 |\n| 離軌可靠度 | 要求 ≥95%；Starlink 實際達到 **>99%** |\n\n### 8.2 其他關鍵框架\n\n| 機構/框架 | 角色 |\n|---------|------|\n| ITU | 管理無線電頻率和軌道位置槽（Ku/Ka/V 波段） |\n| Space Data Association (SDA) | 成員間安全共享高質量星歷和機動計劃 |\n| UN COPUOS | 討論 STM 國際規範 |\n| IADC | 太空碎片緩解指引（SpaceX 遵循） |\n| TraCSS（美國商務部） | 正在建立的商業太空交通協調服務 |\n\n---\n\n## 9. 挑戰與爭議\n\n### 9.1 聯合預警飽和（Notification Saturation）\n\n| 挑戰 | 詳情 |\n|------|------|\n| 假預警過多 | 低精度追蹤導致 Pₓ 被高估；運營商需大量人力篩選 |\n| 週期性洪峰 | 大型星座因軌道幾何重複，每幾週產生密集接近預警波浪 |\n| 不可機動物體 | ~30% 的接近涉及失效衛星或碎片，完全依賴主動衛星單方面規避 |\n| 未追蹤碎片 | < 10 cm 碎片完全無法預警，唯一保護是物理防護和低軌快速自然衰減 |\n\n### 9.2 跨運營商協調缺失\n\n- **無強制「路權」規則：** 國際上無任何法律規定誰必須機動、誰優先\n- **通訊不一致：** 部分運營商不持續更新星歷，其他方無法準確評估風險\n- **ESA CREAM 提案：** ESA 推動「碰撞風險估算與自動緩解」系統，尚未成為全球標準\n\n### 9.3 機動次數爆炸性增長\n\n> **🛑 特別注意**\n>\n> 部分研究人員預測 Starlink 年機動次數在 **2027–2028 年可能突破 100 萬次**，將帶來：\n> - 極大燃料消耗壓力（縮短衛星壽命）\n> - 巨量自動指令上傳/通訊負擔\n> - 現有電子郵件協調機制的徹底崩潰\n\n---\n\n## 快速參考匯總\n\n| 關鍵參數 | 數值 |\n|---------|------|\n| Pc 機動觸發門檻 | **3×10⁻⁷**（比業界慣例 1×10⁻⁴ 嚴格約 330 倍） |\n| 推進系統 | **霍爾效應離子推進器**（氪/氬推進劑） |\n| 典型機動 ΔV | **0.5–3 m/s**（沿軌方向） |\n| 自動化程度 | **完全自主**（無需人工批准每次機動） |\n| Stargaze 感測器 | **~30,000 個星跡儀**，每日 3,000 萬次觀測 |\n| Stargaze 篩選延遲 | **< 1 分鐘** |\n| 2025 全年機動次數 | **~300,000 次** |\n| 2026 H1 機動次數 | **207,152 次** |\n| 每顆衛星年均機動 | **~40 次（約每週一次）** |\n| FCC 半年報告 | **強制義務** |\n| 5 年離軌要求 | **FCC 2022年規定** |\n| 地面安全平台 | **space-safety.starlink.com**（免費開放） |\n| 緊急協調聯絡 | space-safety-onboarding@spacex.com |\n\n---\n\n*本報告彙整截至 2026 年 8 月的最新公開資訊，資料來源包括 SpaceX/Starlink 官方網站、FCC 半年報告、ESA 官方新聞、NASA 研究、AIAA 論文、Space.com、Breaking Defense、Payload Space 等。部分 SpaceX 內部系統細節（如地面控制系統介面）屬商業機密，未見於公開文獻。*\n";
+
+window.addEventListener("DOMContentLoaded", async () => {
+  // 1) 先把數學式抽出保護，避免 marked 動到底線與反斜線
+  const mathStore = [];
+  let text = SOURCE.replace(/\$\$[\s\S]+?\$\$/g, m => `@@MATH${mathStore.push(m) - 1}@@`);
+  text = text.replace(/\$[^\$\n]+?\$/g, m => `@@MATH${mathStore.push(m) - 1}@@`);
+
+  // 2) Markdown → HTML
+  let html = marked.parse(text, { gfm: true, breaks: false });
+  html = html.replace(/@@MATH(\d+)@@/g, (_, i) => mathStore[Number(i)]);
+  const content = document.getElementById("content");
+  content.innerHTML = html;
+
+  // 3) 文件間連結 .md → .html
+  content.querySelectorAll("a[href]").forEach(a => {
+    const href = a.getAttribute("href");
+    if (href && !/^https?:/i.test(href) && /\.md(#.*)?$/i.test(href)) {
+      a.setAttribute("href", href.replace(/\.md(#.*)?$/i, ".html$1"));
+    }
+  });
+
+  // 4) mermaid 程式碼區塊 → 圖
+  content.querySelectorAll("pre code.language-mermaid").forEach(code => {
+    const div = document.createElement("div");
+    div.className = "mermaid";
+    div.textContent = code.textContent;
+    code.closest("pre").replaceWith(div);
+  });
+  mermaid.initialize({ startOnLoad: false, theme: "default", securityLevel: "loose" });
+  try { await mermaid.run({ querySelector: ".mermaid" }); } catch (e) { console.warn(e); }
+
+  // 5) KaTeX 數學式
+  const renderMath = () => renderMathInElement(content, {
+    delimiters: [
+      { left: "$$", right: "$$", display: true },
+      { left: "$", right: "$", display: false }
+    ],
+    throwOnError: false
+  });
+  if (window.renderMathInElement) renderMath();
+  else window.addEventListener("load", renderMath);
+});
+</script>
+</body>
+</html>
