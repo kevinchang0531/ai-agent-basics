@@ -1,0 +1,134 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>OR-Tools：衛星任務排程教學</title>
+<style>
+  :root{--bg:#07121f;--panel:#0d2033;--panel2:#102a42;--ink:#edf6ff;--muted:#9db1c5;--cyan:#54d9ff;--amber:#ffc857;--red:#ff7b72;--green:#68e0a0;--line:#24435d;--shadow:0 24px 80px #0007}
+  *{box-sizing:border-box} html,body{margin:0;background:var(--bg);color:var(--ink);font-family:"Aptos","Noto Sans TC","Microsoft JhengHei",sans-serif;overflow:hidden}
+  body:before{content:"";position:fixed;inset:0;background:radial-gradient(circle at 82% 10%,#16466b55,transparent 32%),radial-gradient(circle at 15% 90%,#0d5c6250,transparent 30%);pointer-events:none}
+  .deck{height:100vh;display:grid;grid-template-rows:64px 1fr 56px;position:relative}
+  header,footer{display:flex;align-items:center;justify-content:space-between;padding:0 4vw;border-bottom:1px solid var(--line);font-size:13px;color:var(--muted);letter-spacing:.04em}
+  footer{border-top:1px solid var(--line);border-bottom:0}
+  header .brand{color:var(--cyan);font-weight:800} header .tag{color:var(--amber)}
+  main{position:relative;overflow:hidden}.slide{position:absolute;inset:0;padding:5.2vh 8vw 3vh;display:none;overflow:auto}.slide.active{display:block;animation:in .35s ease-out}@keyframes in{from{opacity:0;transform:translateX(18px)}to{opacity:1;transform:none}}
+  .eyebrow{font-size:14px;color:var(--cyan);letter-spacing:.16em;text-transform:uppercase;font-weight:800;margin-bottom:16px}.kicker{color:var(--amber);font-size:15px;font-weight:700;margin-top:20px}
+  h1{font-size:clamp(42px,6.4vw,92px);line-height:.98;margin:0 0 25px;max-width:980px;letter-spacing:-.055em}h2{font-size:clamp(30px,4vw,58px);line-height:1.05;margin:0 0 22px;letter-spacing:-.04em}h3{font-size:22px;margin:0 0 10px}p{font-size:18px;line-height:1.65;color:#d5e5f1;max-width:930px}.lead{font-size:clamp(20px,2.2vw,30px);max-width:900px;color:#c7dae8;line-height:1.5}.small{font-size:14px;color:var(--muted);line-height:1.55}.source{font-size:12px;color:#7f9ab0;margin-top:18px}.source a{color:#9bdfff}
+  .grid{display:grid;gap:18px}.g2{grid-template-columns:repeat(2,minmax(0,1fr))}.g3{grid-template-columns:repeat(3,minmax(0,1fr))}.g4{grid-template-columns:repeat(4,minmax(0,1fr))}
+  .card{background:linear-gradient(145deg,#10283d,#0b1c2e);border:1px solid var(--line);border-radius:18px;padding:22px;box-shadow:var(--shadow)}.card h3{color:var(--cyan)}.card p{font-size:16px;margin:7px 0 0}.num{font-size:42px;font-weight:900;color:var(--amber);line-height:1}.pill{display:inline-flex;padding:7px 11px;border-radius:99px;background:#16425c;color:var(--cyan);font-size:13px;font-weight:700;margin:4px 4px 0 0}.pill.amber{background:#56431d;color:var(--amber)}.pill.red{background:#512a2c;color:#ffaaa4}.pill.green{background:#164735;color:#8ff0b7}
+  .hero{display:grid;grid-template-columns:1.08fr .92fr;gap:5vw;align-items:center;height:100%}.orbital{height:360px;position:relative;display:grid;place-items:center}.earth{width:205px;height:205px;border-radius:50%;background:radial-gradient(circle at 35% 28%,#65dcff 0 4%,transparent 5%),radial-gradient(ellipse at 40% 40%,#4ad19d 0 13%,transparent 14%),radial-gradient(ellipse at 66% 60%,#2e8d77 0 11%,transparent 12%),linear-gradient(140deg,#16639a,#0d2f6e 65%);box-shadow:0 0 0 11px #103b5b,0 0 70px #39caff88}.orbit{position:absolute;border:2px solid #51dfff99;border-radius:50%;transform:rotate(-19deg);width:470px;height:220px}.orbit:after{content:"";position:absolute;width:14px;height:14px;background:var(--amber);border-radius:50%;right:45px;top:25px;box-shadow:0 0 25px var(--amber)}.star{position:absolute;color:#8bdcff;font-size:18px}.s1{left:12%;top:14%}.s2{right:9%;top:27%;color:var(--amber)}.s3{left:20%;bottom:12%;color:#73eca8}.route{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-top:26px}.route .box{padding:14px 17px;border:1px solid var(--line);border-radius:12px;background:#0c2538;font-weight:700}.arrow{color:var(--amber);font-size:26px}
+  .flow{display:grid;grid-template-columns:repeat(5,1fr);gap:10px;align-items:stretch;margin-top:32px}.flow .step{position:relative;background:#0d2438;border:1px solid var(--line);border-radius:15px;padding:18px 15px}.flow .step:not(:last-child):after{content:"→";position:absolute;right:-18px;top:39%;color:var(--amber);font-size:24px;z-index:2}.step b{display:block;color:var(--amber);font-size:13px;letter-spacing:.08em;margin-bottom:10px}.step strong{font-size:19px;display:block;margin-bottom:8px}.step span{font-size:14px;color:var(--muted);line-height:1.5}
+  .constraint{border-left:4px solid var(--cyan);padding:13px 17px;margin:10px 0;background:#0c2337;border-radius:0 12px 12px 0;font-size:17px}.constraint b{color:var(--cyan)}
+  table{width:100%;border-collapse:collapse;background:#0b1e30;border:1px solid var(--line);border-radius:14px;overflow:hidden;font-size:15px}th,td{padding:12px 14px;border-bottom:1px solid var(--line);text-align:left}th{color:var(--amber);background:#102b42}tr:last-child td{border-bottom:0}.yes{color:var(--green);font-weight:800}.no{color:var(--red);font-weight:800}
+  pre{background:#06111d;border:1px solid #25445e;border-radius:16px;padding:20px;overflow:auto;color:#d9f5ff;font:13px/1.58 "Cascadia Code","Consolas",monospace;box-shadow:inset 0 0 30px #0005}.kw{color:#ff9bd2}.fn{color:#71dcff}.cm{color:#7593a8}.str{color:#ffd17b}.code-caption{font-size:13px;color:var(--muted);margin:0 0 8px}
+  .timeline{margin-top:25px;border:1px solid var(--line);border-radius:16px;padding:20px;background:#0b1d2e}.axis{display:grid;grid-template-columns:repeat(7,1fr);color:var(--muted);font-size:12px;margin-left:130px}.lane{display:grid;grid-template-columns:120px 1fr;align-items:center;margin:13px 0}.lane label{font-weight:700;color:#c6dbea}.bararea{height:34px;position:relative;background:repeating-linear-gradient(90deg,#122d43 0,#122d43 calc(16.666% - 1px),#1b4059 calc(16.666% - 1px),#1b4059 16.666%);border-radius:8px}.bar{position:absolute;height:34px;border-radius:8px;display:grid;place-items:center;font-size:12px;font-weight:800;color:#04111b}.b1{left:0;width:16.66%;background:var(--cyan)}.b2{left:33.33%;width:16.66%;background:var(--amber)}.b3{left:50%;width:16.66%;background:var(--green)}.b4{left:66.66%;width:16.66%;background:#c49bff}
+  .bigquote{font-size:clamp(30px,4.5vw,65px);font-weight:900;line-height:1.08;letter-spacing:-.045em;max-width:1000px}.bigquote em{font-style:normal;color:var(--amber)}
+  .callout{padding:20px 24px;border-radius:18px;border:1px solid #7d642b;background:linear-gradient(120deg,#3c321b,#221e18);margin-top:20px}.callout strong{color:var(--amber)}
+  .checklist{display:grid;gap:11px;margin-top:18px}.checklist div{padding:13px 16px;background:#0d263b;border:1px solid var(--line);border-radius:12px;font-size:17px}.checklist div:before{content:"✓";color:var(--green);font-weight:900;margin-right:10px}
+  .controls{display:flex;align-items:center;gap:11px}.controls button{border:1px solid var(--line);background:#102a40;color:var(--ink);border-radius:9px;padding:8px 12px;cursor:pointer;font-size:14px}.controls button:hover{border-color:var(--cyan);color:var(--cyan)}#count{min-width:55px;text-align:center}.progress{position:absolute;left:0;bottom:0;height:3px;background:var(--cyan);width:0;transition:width .25s}
+  @media(max-width:900px){.hero,.g2{grid-template-columns:1fr}.orbital{height:250px;order:-1}.earth{width:145px;height:145px}.orbit{width:340px;height:170px}.flow{grid-template-columns:1fr}.flow .step:not(:last-child):after{content:"↓";right:48%;top:auto;bottom:-23px}.slide{padding:4vh 6vw 2vh}.g3,.g4{grid-template-columns:1fr 1fr}.timeline{overflow:auto;min-width:650px}}
+</style>
+</head>
+<body>
+<div class="deck">
+<header><div class="brand">MISSION OPS × PYTHON</div><div class="tag">OR-TOOLS / 教學簡報</div></header>
+<main>
+<section class="slide active">
+  <div class="hero"><div><div class="eyebrow">Constraint Optimization · Satellite Operations</div><h1>把任務規則，變成一張可求解的排程。</h1><p class="lead">OR-Tools 不是「替你猜答案的 AI」，而是一套把時間窗、資源衝突、優先順序與操作規則交給求解器處理的工具。</p><div class="route"><span class="box">觀測機會</span><span class="arrow">→</span><span class="box">限制條件</span><span class="arrow">→</span><span class="box">可執行排程</span></div><p class="source">本簡報以 Google OR-Tools 官方文件與地球觀測衛星排程研究為主要資料來源。</p></div><div class="orbital"><span class="star s1">✦</span><span class="star s2">✦</span><span class="star s3">✦</span><div class="orbit"></div><div class="earth"></div></div></div>
+</section>
+<section class="slide">
+  <div class="eyebrow">01 / Learning map</div><h2>今天學完，您應該能看懂三件事</h2>
+  <div class="grid g3" style="margin-top:34px"><div class="card"><div class="num">01</div><h3>它在解什麼問題？</h3><p>理解「候選方案很多，但每個方案都要遵守規則」的排程本質。</p></div><div class="card"><div class="num">02</div><h3>模型怎麼寫？</h3><p>把操作語言翻成三種元素：決策變數、限制條件、目標函數。</p></div><div class="card"><div class="num">03</div><h3>怎麼接到衛星任務？</h3><p>從可見窗口開始，接上資源衝突、優先任務與排程驗證。</p></div></div>
+  <div class="kicker">核心觀念</div><p class="bigquote">求解器不會替你定義任務規則；<em>它會忠實地執行你寫進去的規則。</em></p>
+</section>
+<section class="slide">
+  <div class="eyebrow">02 / Why scheduling is hard</div><h2>排程難，不是因為任務少，而是因為限制會互相撞在一起。</h2>
+  <div class="flow"><div class="step"><b>INPUT 01</b><strong>任務需求</strong><span>目標、優先級、持續時間、截止時間</span></div><div class="step"><b>INPUT 02</b><strong>可見窗口</strong><span>衛星能看見目標的時間區段</span></div><div class="step"><b>INPUT 03</b><strong>有限資源</strong><span>姿態、能源、記憶體、天線、下傳鏈路</span></div><div class="step"><b>RULES</b><strong>不能衝突</strong><span>同一時間不能做兩件互斥的事</span></div><div class="step"><b>GOAL</b><strong>取捨</strong><span>在可執行前提下最大化任務價值</span></div></div>
+  <div class="callout"><strong>指揮官視角：</strong>「今天拍最多張」不一定是好答案；好答案是能在能源、姿態、下傳與時限都合規時，完成最有價值的任務。</div>
+  <p class="source">Google 將 scheduling 定義為：在特定時間把資源分配給任務；CP 適合處理大量異質限制條件。<a href="https://developers.google.com/optimization/cp" target="_blank">官方說明</a></p>
+</section>
+<section class="slide">
+  <div class="eyebrow">03 / What is OR-Tools?</div><h2>OR-Tools 是一個「最佳化工具箱」</h2>
+  <div class="grid g2" style="margin-top:22px"><div class="card"><h3>OR = Operations Research</h3><p>把有限資源分配到許多可能方案中，尋找最佳或足夠好的決策。</p><div style="margin-top:16px"><span class="pill">Scheduling</span><span class="pill">Routing</span><span class="pill">Packing</span><span class="pill">Assignment</span></div></div><div class="card"><h3>Python 只是建模語言</h3><p>您用 Python 描述問題；真正搜尋解答的是 CP-SAT、MIP、流量或路由等求解器。</p><div style="margin-top:16px"><span class="pill green">Model</span><span class="arrow">→</span><span class="pill amber">Solver</span><span class="arrow">→</span><span class="pill">Solution</span></div></div></div>
+  <div class="grid g3" style="margin-top:18px"><div class="card"><h3>CP-SAT</h3><p>適合布林決策、時間區間、互斥與複雜規則，是本課主角。</p></div><div class="card"><h3>MIP / MathOpt</h3><p>適合線性與混合整數模型；連續量與成本模型常見。</p></div><div class="card"><h3>Solver 控制</h3><p>可設定時間上限，取得最佳解、可行解或在時限內最好的解。</p></div></div>
+  <p class="source"><a href="https://developers.google.com/optimization" target="_blank">Google OR-Tools 官方總覽</a>｜<a href="https://developers.google.com/optimization/introduction/python" target="_blank">Python 入門</a></p>
+</section>
+<section class="slide">
+  <div class="eyebrow">04 / The mental model</div><h2>把一個排程問題拆成三層</h2>
+  <div class="grid g3" style="margin-top:30px"><div class="card" style="border-top:4px solid var(--cyan)"><div class="num">A</div><h3>決策變數</h3><p>電腦要替我們決定什麼？例如：任務是否執行、何時開始、分配哪一個天線。</p><div class="constraint"><b>衛星例子：</b>觀測 A 是否選取？開始時間是多少？</div></div><div class="card" style="border-top:4px solid var(--amber)"><div class="num">B</div><h3>限制條件</h3><p>什麼事情不可以發生？例如：時間窗外不可執行、同一資源不可重疊。</p><div class="constraint"><b>衛星例子：</b>姿態機動完成前不能拍攝。</div></div><div class="card" style="border-top:4px solid var(--green)"><div class="num">C</div><h3>目標函數</h3><p>在所有可行答案中，想讓什麼最大或最小？</p><div class="constraint"><b>衛星例子：</b>最大化任務價值，或最小化延遲與燃料成本。</div></div></div>
+  <p class="bigquote" style="margin-top:34px">先求「做得到」，再談「哪一個最好」。</p>
+</section>
+<section class="slide">
+  <div class="eyebrow">05 / Satellite case</div><h2>從三個觀測任務開始：哪一組能排進去？</h2>
+  <div class="grid g2" style="margin-top:24px"><div><table><thead><tr><th>任務</th><th>可執行窗口</th><th>持續</th><th>價值</th></tr></thead><tbody><tr><td>災害區 A</td><td>01:00–03:00</td><td>30 分</td><td class="yes">100</td></tr><tr><td>海岸線 B</td><td>02:00–05:00</td><td>45 分</td><td class="yes">70</td></tr><tr><td>雲量監測 C</td><td>04:00–06:00</td><td>30 分</td><td class="yes">45</td></tr></tbody></table><p class="small">假設：三個任務共享同一個觀測載荷；同一時間只能執行一個任務。</p></div><div><div class="constraint"><b>限制 1：</b>任務只能在自己的可見窗口內執行。</div><div class="constraint"><b>限制 2：</b>同一載荷的任務不可重疊。</div><div class="constraint"><b>限制 3：</b>任務可選做，不必全部接受。</div><div class="constraint"><b>目標：</b>最大化總任務價值。</div></div></div>
+  <div class="kicker">指揮判讀</div><p>人眼可以處理三個任務；當任務、衛星、資源、窗口增多後，人工容易漏掉衝突，模型則能把規則固定下來反覆重算。</p>
+</section>
+<section class="slide">
+  <div class="eyebrow">06 / Python model</div><h2>程式的核心不是「寫很多行」，而是把規則寫對。</h2>
+  <div class="grid g2" style="margin-top:20px"><div><p class="code-caption">概念版：每個任務是一個可選的時間區間</p><pre><span class="kw">from</span> ortools.sat.python <span class="kw">import</span> cp_model
+
+model = cp_model.CpModel()
+horizon = 360
+intervals = []
+selected = {}
+
+<span class="kw">for</span> name, window, duration, score <span class="kw">in</span> tasks:
+    start = model.new_int_var(
+        window[0], window[1] - duration, name + <span class="str">"_start"</span>)
+    end = model.new_int_var(0, horizon, name + <span class="str">"_end"</span>)
+    use = model.new_bool_var(name + <span class="str">"_selected"</span>)
+    interval = model.new_optional_interval_var(
+        start, duration, end, use, name)
+    intervals.append(interval)
+    selected[name] = use
+
+model.add_no_overlap(intervals)
+model.maximize(sum(score * selected[name]
+                   <span class="kw">for</span> name, score <span class="kw">in</span> values))</pre></div><div><h3>把程式翻回操作語言</h3><div class="checklist"><div><b>new_bool_var</b>：這個任務要不要做？</div><div><b>interval</b>：任務從哪時開始、持續多久？</div><div><b>optional</b>：可選任務；不是每個請求都必須接受。</div><div><b>add_no_overlap</b>：同一載荷不能同時執行兩個任務。</div><div><b>maximize</b>：優先選擇總價值高的組合。</div></div><div class="callout"><strong>重點：</strong>OR-Tools 不會自動知道「姿態、功率、熱控」；這些必須由任務專家轉成模型規則。</div></div></div>
+  <p class="source">語法對應 CP-SAT scheduling 的 interval、optional interval 與 no-overlap。<a href="https://github.com/google/or-tools/blob/stable/ortools/sat/docs/scheduling.md" target="_blank">官方 scheduling recipes</a></p>
+</section>
+<section class="slide">
+  <div class="eyebrow">07 / A possible solution</div><h2>求解結果是一張「可檢查的任務時間線」</h2>
+  <div class="timeline"><div class="axis"><span>01:00</span><span>02:00</span><span>03:00</span><span>04:00</span><span>05:00</span><span>06:00</span><span>07:00</span></div><div class="lane"><label>載荷 / A</label><div class="bararea"><div class="bar b1">災害區 A · 100</div></div></div><div class="lane"><label>載荷 / B</label><div class="bararea"><div class="bar b2">海岸線 B · 70</div></div></div><div class="lane"><label>載荷 / C</label><div class="bararea"><div class="bar b3">雲量 C · 45</div></div></div><div class="lane"><label>地面站</label><div class="bararea"><div class="bar b4">下傳窗口</div></div></div></div>
+  <div class="grid g3" style="margin-top:22px"><div class="card"><h3 class="yes">可行</h3><p>每個任務都在窗口內，載荷沒有重疊。</p></div><div class="card"><h3>可解釋</h3><p>每個選擇都能回溯到任務價值與限制條件。</p></div><div class="card"><h3>可重算</h3><p>若 A 延遲或地面站故障，可帶入新條件重新求解。</p></div></div>
+  <p class="small" style="margin-top:18px">示意圖不是實際衛星資料；它用來說明 OR-Tools 的輸出型態。</p>
+</section>
+<section class="slide">
+  <div class="eyebrow">08 / Mission operations architecture</div><h2>OR-Tools 放在「決策支援層」，不是直接取代飛控。</h2>
+  <div class="flow"><div class="step"><b>01 · DATA</b><strong>軌道與窗口</strong><span>Skyfield、Orekit 或任務系統產生可見性資料</span></div><div class="step"><b>02 · MODEL</b><strong>候選任務</strong><span>把目標、時長、姿態與資源需求整理成資料</span></div><div class="step"><b>03 · SOLVE</b><strong>OR-Tools</strong><span>在限制條件下選擇與排序任務</span></div><div class="step"><b>04 · VERIFY</b><strong>規則檢查</strong><span>再次驗證功率、熱、記憶體、下傳與命令格式</span></div><div class="step"><b>05 · RELEASE</b><strong>人工核准</strong><span>通過任務規範與值班程序後，才進入命令流程</span></div></div>
+  <div class="callout"><strong>操作邊界：</strong>求解器得到的是「模型下的解」。模型不完整、資料過期或單位／座標錯誤時，最佳解仍可能不是安全解。</div>
+</section>
+<section class="slide">
+  <div class="eyebrow">09 / How to grow the model</div><h2>從「排三個任務」逐步長成「任務排程器」</h2>
+  <div class="grid g4" style="margin-top:28px"><div class="card"><div class="num">1</div><h3>時間窗</h3><p>只能在可見時間內觀測。</p></div><div class="card"><div class="num">2</div><h3>資源</h3><p>天線、載荷、功率、記憶體與下傳容量。</p></div><div class="card"><div class="num">3</div><h3>任務鏈</h3><p>機動 → 穩定 → 拍攝 → 儲存 → 下傳。</p></div><div class="card"><div class="num">4</div><h3>不確定性</h3><p>雲量、延遲、故障與滾動重排。</p></div></div>
+  <div class="kicker">模型演進順序</div><div class="route"><span class="box">可行性</span><span class="arrow">→</span><span class="box">價值最佳化</span><span class="arrow">→</span><span class="box">多資源協同</span><span class="arrow">→</span><span class="box">滾動重排</span><span class="arrow">→</span><span class="box">程序驗證</span></div>
+  <p class="source">Google 的 job-shop 範例以 precedence 與 no-overlap 描述任務順序及資源互斥，這正是衛星任務鏈可借用的建模思路。<a href="https://developers.google.com/optimization/scheduling/job_shop" target="_blank">官方案例</a></p>
+</section>
+<section class="slide">
+  <div class="eyebrow">10 / Teaching & AI use</div><h2>同一個模型，也能變成您的 AI 備課素材。</h2>
+  <div class="grid g3" style="margin-top:26px"><div class="card"><h3>Jupyter Notebook</h3><p>一格一格展示資料、程式、圖表與解釋；適合演示「加一條限制，答案怎麼變」。</p><span class="pill">互動實驗</span></div><div class="card"><h3>Streamlit</h3><p>把任務優先級、窗口與資源容量做成滑桿，讓學員直接觀察排程變化。</p><span class="pill green">操作儀表板</span></div><div class="card"><h3>AI 輔助教材</h3><p>讓 AI 將同一個模型改寫成初學者版、操作員版與指揮官版說明，再由專家審核。</p><span class="pill amber">分層教學</span></div></div>
+  <div class="callout"><strong>一個很好的課堂問題：</strong>「如果災害區 A 的價值從 100 降到 40，OR-Tools 會不會改排？如果不會，哪一條限制阻止了它？」</div>
+  <p class="small">教學時把「求解結果」與「專家判斷」分開：模型示範最佳化，指揮官負責確認任務規範與風險。</p>
+</section>
+<section class="slide">
+  <div class="eyebrow">11 / Takeaway</div><h2>把 OR-Tools 記成一句話</h2>
+  <p class="bigquote">您提供任務、資源、限制與價值；<em>它替您搜尋可行且更好的組合。</em></p>
+  <div class="grid g3" style="margin-top:38px"><div class="card"><h3>先從小模型開始</h3><p>三個任務、一個載荷、一個時間窗，先驗證規則與輸出。</p></div><div class="card"><h3>每加一條規則就測試</h3><p>避免把多個未驗證的操作假設一次塞進模型。</p></div><div class="card"><h3>用實際流程包住求解器</h3><p>資料更新、獨立驗證、人工核准與命令釋出不可省略。</p></div></div>
+  <div class="kicker">下一個實作題目</div><p>建立一個「單衛星、兩個地面站、五個觀測請求」的 CP-SAT 排程模型，輸出甘特圖與未排入任務清單。</p>
+</section>
+<section class="slide">
+  <div class="eyebrow">12 / References</div><h2>資料來源與延伸閱讀</h2>
+  <div class="grid g2" style="margin-top:24px"><div class="card"><h3>OR-Tools 官方資料</h3><p><a href="https://developers.google.com/optimization" target="_blank">OR-Tools 總覽</a><br><a href="https://developers.google.com/optimization/cp" target="_blank">Constraint Optimization</a><br><a href="https://developers.google.com/optimization/scheduling" target="_blank">Scheduling Overview</a><br><a href="https://developers.google.com/optimization/scheduling/job_shop" target="_blank">Job Shop Problem</a><br><a href="https://github.com/google/or-tools/blob/stable/ortools/sat/docs/scheduling.md" target="_blank">CP-SAT Scheduling Recipes</a></p></div><div class="card"><h3>衛星排程延伸資料</h3><p><a href="https://github.com/AlexVasegaard/EOS" target="_blank">EOSpython：地球觀測衛星排程</a><br><a href="https://arxiv.org/abs/2410.13462" target="_blank">EOSpython 研究論文</a><br><a href="https://github.com/EarthObservationSimulator/orbitpy" target="_blank">OrbitPy：軌道與覆蓋計算</a><br><a href="https://arxiv.org/abs/2604.13283" target="_blank">未知操作限制下的 EO 衛星排程研究</a></p></div></div>
+  <p class="source">查詢日期：2026-09-13。資料連結僅供閱讀與後續評估；本簡報製作過程未下載或安裝上述工具。</p>
+</section>
+</main>
+<footer><div id="title">OR-Tools：衛星任務排程</div><div class="controls"><button id="prev">← 上一頁</button><span id="count">1 / 12</span><button id="next">下一頁 →</button></div><div class="progress" id="progress"></div></footer>
+</div>
+<script>
+const slides=[...document.querySelectorAll('.slide')], count=document.querySelector('#count'), progress=document.querySelector('#progress'); let index=0;
+function show(i){index=(i+slides.length)%slides.length;slides.forEach((s,n)=>s.classList.toggle('active',n===index));count.textContent=`${index+1} / ${slides.length}`;progress.style.width=`${(index+1)/slides.length*100}%`;document.querySelector('main').scrollTop=0}
+document.querySelector('#prev').onclick=()=>show(index-1);document.querySelector('#next').onclick=()=>show(index+1);document.addEventListener('keydown',e=>{if(['ArrowRight','PageDown',' '].includes(e.key)){e.preventDefault();show(index+1)}if(['ArrowLeft','PageUp'].includes(e.key)){e.preventDefault();show(index-1)}if(e.key==='Home')show(0);if(e.key==='End')show(slides.length-1)});show(0);
+</script>
+</body>
+</html>
