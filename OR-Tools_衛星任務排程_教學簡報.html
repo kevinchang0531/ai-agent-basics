@@ -35,15 +35,16 @@
 <header><div class="brand">MISSION OPS × PYTHON</div><div class="tag">OR-TOOLS / 教學簡報</div></header>
 <main>
 <section class="slide active">
-  <div class="hero"><div><div class="eyebrow">Constraint Optimization · Satellite Operations</div><h1>把任務規則，變成一張可求解的排程。</h1><p class="lead">OR-Tools 不是「替你猜答案的 AI」，而是一套把時間窗、資源衝突、優先順序與操作規則交給求解器處理的工具。</p><div class="route"><span class="box">觀測機會</span><span class="arrow">→</span><span class="box">限制條件</span><span class="arrow">→</span><span class="box">可執行排程</span></div><p class="source">本簡報以 Google OR-Tools 官方文件與地球觀測衛星排程研究為主要資料來源。</p></div><div class="orbital"><span class="star s1">✦</span><span class="star s2">✦</span><span class="star s3">✦</span><div class="orbit"></div><div class="earth"></div></div></div>
+  <div class="hero"><div><div class="eyebrow">Constraint Optimization · Satellite Operations</div><h1>把任務規則，變成一套可求解的排程工具。</h1><p class="lead">OR-Tools 不是「替你猜答案的 AI」，而是一套把時間窗、資源衝突、優先順序與操作規則交給求解器處理的工具。</p><div class="route"><span class="box">觀測機會</span><span class="arrow">→</span><span class="box">限制條件</span><span class="arrow">→</span><span class="box">可執行排程</span></div><p class="source">本簡報以 Google OR-Tools 官方文件與地球觀測衛星排程研究為主要資料來源。</p></div><div class="orbital"><span class="star s1">✦</span><span class="star s2">✦</span><span class="star s3">✦</span><div class="orbit"></div><div class="earth"></div></div></div>
 </section>
 <section class="slide">
-  <div class="eyebrow">01 / Learning map</div><h2>今天學完，您應該能看懂三件事</h2>
+  <div class="eyebrow">01 / Learning map</div><h2>您應該瞭解的三件事</h2>
+  <p class="lead">OR-Tools 是 Google 開源的最佳化工具箱，用來在許多方案中(Sentinel-2A、EnduroSat)，找出符合限制且足夠好的決策。</p>
   <div class="grid g3" style="margin-top:34px"><div class="card"><div class="num">01</div><h3>它在解什麼問題？</h3><p>理解「候選方案很多，但每個方案都要遵守規則」的排程本質。</p></div><div class="card"><div class="num">02</div><h3>模型怎麼寫？</h3><p>把操作語言翻成三種元素：決策變數、限制條件、目標函數。</p></div><div class="card"><div class="num">03</div><h3>怎麼接到衛星任務？</h3><p>從可見窗口開始，接上資源衝突、優先任務與排程驗證。</p></div></div>
   <div class="kicker">核心觀念</div><p class="bigquote">求解器不會替你定義任務規則；<em>它會忠實地執行你寫進去的規則。</em></p>
 </section>
 <section class="slide">
-  <div class="eyebrow">02 / Why scheduling is hard</div><h2>排程難，不是因為任務少，而是因為限制會互相撞在一起。</h2>
+  <div class="eyebrow">02 / Why scheduling is hard</div><h2>排程難，是因為資源不足與限制會互相撞在一起。</h2>
   <div class="flow"><div class="step"><b>INPUT 01</b><strong>任務需求</strong><span>目標、優先級、持續時間、截止時間</span></div><div class="step"><b>INPUT 02</b><strong>可見窗口</strong><span>衛星能看見目標的時間區段</span></div><div class="step"><b>INPUT 03</b><strong>有限資源</strong><span>姿態、能源、記憶體、天線、下傳鏈路</span></div><div class="step"><b>RULES</b><strong>不能衝突</strong><span>同一時間不能做兩件互斥的事</span></div><div class="step"><b>GOAL</b><strong>取捨</strong><span>在可執行前提下最大化任務價值</span></div></div>
   <div class="callout"><strong>指揮官視角：</strong>「今天拍最多張」不一定是好答案；好答案是能在能源、姿態、下傳與時限都合規時，完成最有價值的任務。</div>
   <p class="source">Google 將 scheduling 定義為：在特定時間把資源分配給任務；CP 適合處理大量異質限制條件。<a href="https://developers.google.com/optimization/cp" target="_blank">官方說明</a></p>
@@ -51,17 +52,17 @@
 <section class="slide">
   <div class="eyebrow">03 / What is OR-Tools?</div><h2>OR-Tools 是一個「最佳化工具箱」</h2>
   <div class="grid g2" style="margin-top:22px"><div class="card"><h3>OR = Operations Research</h3><p>把有限資源分配到許多可能方案中，尋找最佳或足夠好的決策。</p><div style="margin-top:16px"><span class="pill">Scheduling</span><span class="pill">Routing</span><span class="pill">Packing</span><span class="pill">Assignment</span></div></div><div class="card"><h3>Python 只是建模語言</h3><p>您用 Python 描述問題；真正搜尋解答的是 CP-SAT、MIP、流量或路由等求解器。</p><div style="margin-top:16px"><span class="pill green">Model</span><span class="arrow">→</span><span class="pill amber">Solver</span><span class="arrow">→</span><span class="pill">Solution</span></div></div></div>
-  <div class="grid g3" style="margin-top:18px"><div class="card"><h3>CP-SAT</h3><p>適合布林決策、時間區間、互斥與複雜規則，是本課主角。</p></div><div class="card"><h3>MIP / MathOpt</h3><p>適合線性與混合整數模型；連續量與成本模型常見。</p></div><div class="card"><h3>Solver 控制</h3><p>可設定時間上限，取得最佳解、可行解或在時限內最好的解。</p></div></div>
+  <div class="grid g3" style="margin-top:18px"><div class="card"><h3>CP-SAT</h3><p>適合布林決策、時間區間、互斥與複雜規則，是本課主角。</p></div><div class="card"><h3>MIP</h3><p>MIP（Mixed-Integer Programming，混合整數規劃）適合線性與混合整數模型；連續量與成本模型常見。</p></div><div class="card"><h3>Solver 控制</h3><p>可設定時間上限，取得最佳解、可行解或在時限內最好的解。</p></div></div>
   <p class="source"><a href="https://developers.google.com/optimization" target="_blank">Google OR-Tools 官方總覽</a>｜<a href="https://developers.google.com/optimization/introduction/python" target="_blank">Python 入門</a></p>
 </section>
 <section class="slide">
   <div class="eyebrow">04 / The mental model</div><h2>把一個排程問題拆成三層</h2>
-  <div class="grid g3" style="margin-top:30px"><div class="card" style="border-top:4px solid var(--cyan)"><div class="num">A</div><h3>決策變數</h3><p>電腦要替我們決定什麼？例如：任務是否執行、何時開始、分配哪一個天線。</p><div class="constraint"><b>衛星例子：</b>觀測 A 是否選取？開始時間是多少？</div></div><div class="card" style="border-top:4px solid var(--amber)"><div class="num">B</div><h3>限制條件</h3><p>什麼事情不可以發生？例如：時間窗外不可執行、同一資源不可重疊。</p><div class="constraint"><b>衛星例子：</b>姿態機動完成前不能拍攝。</div></div><div class="card" style="border-top:4px solid var(--green)"><div class="num">C</div><h3>目標函數</h3><p>在所有可行答案中，想讓什麼最大或最小？</p><div class="constraint"><b>衛星例子：</b>最大化任務價值，或最小化延遲與燃料成本。</div></div></div>
+  <div class="grid g3" style="margin-top:30px"><div class="card" style="border-top:4px solid var(--cyan)"><div class="num">A</div><h3>決策變數</h3><p>電腦要替我們決定什麼？例如：任務是否執行、何時開始、分配哪些資源。</p><div class="constraint"><b>衛星例子：</b>觀測 A 是否選取？開始時間是多少？</div></div><div class="card" style="border-top:4px solid var(--amber)"><div class="num">B</div><h3>限制條件</h3><p>什麼事情不可以發生？例如：時間窗外不可執行、同一資源不可重疊。</p><div class="constraint"><b>衛星例子：</b>姿態機動完成前不能拍攝。</div></div><div class="card" style="border-top:4px solid var(--green)"><div class="num">C</div><h3>目標函數</h3><p>在所有可行答案中，想讓什麼最大或最小？</p><div class="constraint"><b>衛星例子：</b>最大化任務價值，或最小化延遲與燃料成本。</div></div></div>
   <p class="bigquote" style="margin-top:34px">先求「做得到」，再談「哪一個最好」。</p>
 </section>
 <section class="slide">
   <div class="eyebrow">05 / Satellite case</div><h2>從三個觀測任務開始：哪一組能排進去？</h2>
-  <div class="grid g2" style="margin-top:24px"><div><table><thead><tr><th>任務</th><th>可執行窗口</th><th>持續</th><th>價值</th></tr></thead><tbody><tr><td>災害區 A</td><td>01:00–03:00</td><td>30 分</td><td class="yes">100</td></tr><tr><td>海岸線 B</td><td>02:00–05:00</td><td>45 分</td><td class="yes">70</td></tr><tr><td>雲量監測 C</td><td>04:00–06:00</td><td>30 分</td><td class="yes">45</td></tr></tbody></table><p class="small">假設：三個任務共享同一個觀測載荷；同一時間只能執行一個任務。</p></div><div><div class="constraint"><b>限制 1：</b>任務只能在自己的可見窗口內執行。</div><div class="constraint"><b>限制 2：</b>同一載荷的任務不可重疊。</div><div class="constraint"><b>限制 3：</b>任務可選做，不必全部接受。</div><div class="constraint"><b>目標：</b>最大化總任務價值。</div></div></div>
+  <div class="grid g2" style="margin-top:24px"><div><table><thead><tr><th>任務</th><th>可執行窗口</th><th>持續</th><th>價值</th></tr></thead><tbody><tr><td>災害區 A</td><td>01:00–03:00</td><td>30 分</td><td class="yes">100</td></tr><tr><td>海岸線 B</td><td>02:00–05:00</td><td>45 分</td><td class="yes">70</td></tr><tr><td>雲量監測 C</td><td>04:00–06:00</td><td>30 分</td><td class="yes">45</td></tr></tbody></table><p class="small">假設：三個任務共享同一個觀測酬載；同一時間只能執行一個任務。</p></div><div><div class="constraint"><b>限制 1：</b>任務只能在自己的可見窗口內執行。</div><div class="constraint"><b>限制 2：</b>同一酬載的任務不可重疊。</div><div class="constraint"><b>限制 3：</b>任務可選做，不必全部接受。</div><div class="constraint"><b>目標：</b>最大化總任務價值。</div></div></div>
   <div class="kicker">指揮判讀</div><p>人眼可以處理三個任務；當任務、衛星、資源、窗口增多後，人工容易漏掉衝突，模型則能把規則固定下來反覆重算。</p>
 </section>
 <section class="slide">
@@ -85,40 +86,34 @@ selected = {}
 
 model.add_no_overlap(intervals)
 model.maximize(sum(score * selected[name]
-                   <span class="kw">for</span> name, score <span class="kw">in</span> values))</pre></div><div><h3>把程式翻回操作語言</h3><div class="checklist"><div><b>new_bool_var</b>：這個任務要不要做？</div><div><b>interval</b>：任務從哪時開始、持續多久？</div><div><b>optional</b>：可選任務；不是每個請求都必須接受。</div><div><b>add_no_overlap</b>：同一載荷不能同時執行兩個任務。</div><div><b>maximize</b>：優先選擇總價值高的組合。</div></div><div class="callout"><strong>重點：</strong>OR-Tools 不會自動知道「姿態、功率、熱控」；這些必須由任務專家轉成模型規則。</div></div></div>
+                   <span class="kw">for</span> name, score <span class="kw">in</span> values))</pre></div><div><h3>把程式翻回操作語言</h3><div class="checklist"><div><b>new_bool_var</b>：這個任務要不要做？</div><div><b>interval</b>：任務從哪時開始、持續多久？</div><div><b>optional</b>：可選任務；不是每個請求都必須接受。</div><div><b>add_no_overlap</b>：同一酬載不能同時執行兩個任務。</div><div><b>maximize</b>：優先選擇總價值高的組合。</div></div><div class="callout"><strong>重點：</strong>OR-Tools 不會自動知道「姿態、電量、熱控」；這些必須由任務專家轉成模型規則。</div></div></div>
   <p class="source">語法對應 CP-SAT scheduling 的 interval、optional interval 與 no-overlap。<a href="https://github.com/google/or-tools/blob/stable/ortools/sat/docs/scheduling.md" target="_blank">官方 scheduling recipes</a></p>
 </section>
 <section class="slide">
   <div class="eyebrow">07 / A possible solution</div><h2>求解結果是一張「可檢查的任務時間線」</h2>
-  <div class="timeline"><div class="axis"><span>01:00</span><span>02:00</span><span>03:00</span><span>04:00</span><span>05:00</span><span>06:00</span><span>07:00</span></div><div class="lane"><label>載荷 / A</label><div class="bararea"><div class="bar b1">災害區 A · 100</div></div></div><div class="lane"><label>載荷 / B</label><div class="bararea"><div class="bar b2">海岸線 B · 70</div></div></div><div class="lane"><label>載荷 / C</label><div class="bararea"><div class="bar b3">雲量 C · 45</div></div></div><div class="lane"><label>地面站</label><div class="bararea"><div class="bar b4">下傳窗口</div></div></div></div>
-  <div class="grid g3" style="margin-top:22px"><div class="card"><h3 class="yes">可行</h3><p>每個任務都在窗口內，載荷沒有重疊。</p></div><div class="card"><h3>可解釋</h3><p>每個選擇都能回溯到任務價值與限制條件。</p></div><div class="card"><h3>可重算</h3><p>若 A 延遲或地面站故障，可帶入新條件重新求解。</p></div></div>
+  <div class="timeline"><div class="axis"><span>01:00</span><span>02:00</span><span>03:00</span><span>04:00</span><span>05:00</span><span>06:00</span><span>07:00</span></div><div class="lane"><label>酬載 / A</label><div class="bararea"><div class="bar b1">災害區 A · 100</div></div></div><div class="lane"><label>酬載 / B</label><div class="bararea"><div class="bar b2">海岸線 B · 70</div></div></div><div class="lane"><label>酬載 / C</label><div class="bararea"><div class="bar b3">雲量 C · 45</div></div></div><div class="lane"><label>地面站</label><div class="bararea"><div class="bar b4">下傳窗口</div></div></div></div>
+  <div class="grid g3" style="margin-top:22px"><div class="card"><h3 class="yes">可行</h3><p>每個任務都在窗口內，酬載沒有重疊。</p></div><div class="card"><h3>可解釋</h3><p>每個選擇都能回溯到任務價值與限制條件。</p></div><div class="card"><h3>可重算</h3><p>若 A 延遲或地面站故障，可帶入新條件重新求解。</p></div></div>
   <p class="small" style="margin-top:18px">示意圖不是實際衛星資料；它用來說明 OR-Tools 的輸出型態。</p>
 </section>
 <section class="slide">
-  <div class="eyebrow">08 / Mission operations architecture</div><h2>OR-Tools 放在「決策支援層」，不是直接取代飛控。</h2>
-  <div class="flow"><div class="step"><b>01 · DATA</b><strong>軌道與窗口</strong><span>Skyfield、Orekit 或任務系統產生可見性資料</span></div><div class="step"><b>02 · MODEL</b><strong>候選任務</strong><span>把目標、時長、姿態與資源需求整理成資料</span></div><div class="step"><b>03 · SOLVE</b><strong>OR-Tools</strong><span>在限制條件下選擇與排序任務</span></div><div class="step"><b>04 · VERIFY</b><strong>規則檢查</strong><span>再次驗證功率、熱、記憶體、下傳與命令格式</span></div><div class="step"><b>05 · RELEASE</b><strong>人工核准</strong><span>通過任務規範與值班程序後，才進入命令流程</span></div></div>
+  <div class="eyebrow">08 / Mission operations architecture</div><h2>OR-Tools 放在「決策支援層」。</h2>
+  <div class="flow"><div class="step"><b>01 · DATA</b><strong>軌道與窗口</strong><span>Skyfield、Orekit 或任務系統產生可見性資料</span></div><div class="step"><b>02 · MODEL</b><strong>候選任務</strong><span>把目標、時長、姿態與資源需求整理成資料</span></div><div class="step"><b>03 · SOLVE</b><strong>OR-Tools</strong><span>在限制條件下選擇與排序任務</span></div><div class="step"><b>04 · VERIFY</b><strong>規則檢查</strong><span>再次驗證電量、記憶體、下傳與命令格式</span></div><div class="step"><b>05 · RELEASE</b><strong>人工核准</strong><span>通過任務規範與值班程序後，才進入命令流程</span></div></div>
   <div class="callout"><strong>操作邊界：</strong>求解器得到的是「模型下的解」。模型不完整、資料過期或單位／座標錯誤時，最佳解仍可能不是安全解。</div>
 </section>
 <section class="slide">
   <div class="eyebrow">09 / How to grow the model</div><h2>從「排三個任務」逐步長成「任務排程器」</h2>
-  <div class="grid g4" style="margin-top:28px"><div class="card"><div class="num">1</div><h3>時間窗</h3><p>只能在可見時間內觀測。</p></div><div class="card"><div class="num">2</div><h3>資源</h3><p>天線、載荷、功率、記憶體與下傳容量。</p></div><div class="card"><div class="num">3</div><h3>任務鏈</h3><p>機動 → 穩定 → 拍攝 → 儲存 → 下傳。</p></div><div class="card"><div class="num">4</div><h3>不確定性</h3><p>雲量、延遲、故障與滾動重排。</p></div></div>
+  <div class="grid g4" style="margin-top:28px"><div class="card"><div class="num">1</div><h3>時間窗</h3><p>只能在可見時間內觀測。</p></div><div class="card"><div class="num">2</div><h3>資源</h3><p>天線、酬載、電量、記憶體與下傳容量。</p></div><div class="card"><div class="num">3</div><h3>任務鏈</h3><p>機動 → 穩定 → 拍攝 → 儲存 → 下傳。</p></div><div class="card"><div class="num">4</div><h3>不確定性</h3><p>雲量、延遲、故障與滾動重排。</p></div></div>
   <div class="kicker">模型演進順序</div><div class="route"><span class="box">可行性</span><span class="arrow">→</span><span class="box">價值最佳化</span><span class="arrow">→</span><span class="box">多資源協同</span><span class="arrow">→</span><span class="box">滾動重排</span><span class="arrow">→</span><span class="box">程序驗證</span></div>
   <p class="source">Google 的 job-shop 範例以 precedence 與 no-overlap 描述任務順序及資源互斥，這正是衛星任務鏈可借用的建模思路。<a href="https://developers.google.com/optimization/scheduling/job_shop" target="_blank">官方案例</a></p>
 </section>
 <section class="slide">
-  <div class="eyebrow">10 / Teaching & AI use</div><h2>同一個模型，也能變成您的 AI 備課素材。</h2>
-  <div class="grid g3" style="margin-top:26px"><div class="card"><h3>Jupyter Notebook</h3><p>一格一格展示資料、程式、圖表與解釋；適合演示「加一條限制，答案怎麼變」。</p><span class="pill">互動實驗</span></div><div class="card"><h3>Streamlit</h3><p>把任務優先級、窗口與資源容量做成滑桿，讓學員直接觀察排程變化。</p><span class="pill green">操作儀表板</span></div><div class="card"><h3>AI 輔助教材</h3><p>讓 AI 將同一個模型改寫成初學者版、操作員版與指揮官版說明，再由專家審核。</p><span class="pill amber">分層教學</span></div></div>
-  <div class="callout"><strong>一個很好的課堂問題：</strong>「如果災害區 A 的價值從 100 降到 40，OR-Tools 會不會改排？如果不會，哪一條限制阻止了它？」</div>
-  <p class="small">教學時把「求解結果」與「專家判斷」分開：模型示範最佳化，指揮官負責確認任務規範與風險。</p>
-</section>
-<section class="slide">
-  <div class="eyebrow">11 / Takeaway</div><h2>把 OR-Tools 記成一句話</h2>
+  <div class="eyebrow">10 / Takeaway</div><h2>把 OR-Tools 記成一句話</h2>
   <p class="bigquote">您提供任務、資源、限制與價值；<em>它替您搜尋可行且更好的組合。</em></p>
-  <div class="grid g3" style="margin-top:38px"><div class="card"><h3>先從小模型開始</h3><p>三個任務、一個載荷、一個時間窗，先驗證規則與輸出。</p></div><div class="card"><h3>每加一條規則就測試</h3><p>避免把多個未驗證的操作假設一次塞進模型。</p></div><div class="card"><h3>用實際流程包住求解器</h3><p>資料更新、獨立驗證、人工核准與命令釋出不可省略。</p></div></div>
+  <div class="grid g3" style="margin-top:38px"><div class="card"><h3>先從小模型開始</h3><p>三個任務、一個酬載、一個時間窗，先驗證規則與輸出。</p></div><div class="card"><h3>每加一條規則就測試</h3><p>避免把多個未驗證的操作假設一次塞進模型。</p></div><div class="card"><h3>用實際流程包住求解器</h3><p>資料更新、獨立驗證、人工核准與命令釋出不可省略。</p></div></div>
   <div class="kicker">下一個實作題目</div><p>建立一個「單衛星、兩個地面站、五個觀測請求」的 CP-SAT 排程模型，輸出甘特圖與未排入任務清單。</p>
 </section>
 <section class="slide">
-  <div class="eyebrow">12 / References</div><h2>資料來源與延伸閱讀</h2>
+  <div class="eyebrow">11 / References</div><h2>資料來源與延伸閱讀</h2>
   <div class="grid g2" style="margin-top:24px"><div class="card"><h3>OR-Tools 官方資料</h3><p><a href="https://developers.google.com/optimization" target="_blank">OR-Tools 總覽</a><br><a href="https://developers.google.com/optimization/cp" target="_blank">Constraint Optimization</a><br><a href="https://developers.google.com/optimization/scheduling" target="_blank">Scheduling Overview</a><br><a href="https://developers.google.com/optimization/scheduling/job_shop" target="_blank">Job Shop Problem</a><br><a href="https://github.com/google/or-tools/blob/stable/ortools/sat/docs/scheduling.md" target="_blank">CP-SAT Scheduling Recipes</a></p></div><div class="card"><h3>衛星排程延伸資料</h3><p><a href="https://github.com/AlexVasegaard/EOS" target="_blank">EOSpython：地球觀測衛星排程</a><br><a href="https://arxiv.org/abs/2410.13462" target="_blank">EOSpython 研究論文</a><br><a href="https://github.com/EarthObservationSimulator/orbitpy" target="_blank">OrbitPy：軌道與覆蓋計算</a><br><a href="https://arxiv.org/abs/2604.13283" target="_blank">未知操作限制下的 EO 衛星排程研究</a></p></div></div>
   <p class="source">查詢日期：2026-09-13。資料連結僅供閱讀與後續評估；本簡報製作過程未下載或安裝上述工具。</p>
 </section>
