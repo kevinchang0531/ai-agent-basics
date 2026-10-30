@@ -1,0 +1,30 @@
+; Engine configuration file.
+; 以 Godot 4.3 以上版本開啟本專案。
+
+config_version=5
+
+[application]
+
+config/name="江湖俠客行"
+config/description="原創武俠角色扮演遊戲：大地圖探索、戰棋式回合戰鬥、武功修練與多欄位存檔。"
+run/main_scene="res://main.tscn"
+config/features=PackedStringArray("4.3", "GL Compatibility")
+
+[autoload]
+
+Game="*res://scripts/game.gd"
+SaveDB="*res://scripts/save_db.gd"
+Audio="*res://scripts/audio.gd"
+
+[display]
+
+window/size/viewport_width=960
+window/size/viewport_height=640
+window/stretch/mode="canvas_items"
+window/stretch/aspect="keep"
+
+[rendering]
+
+renderer/rendering_method="gl_compatibility"
+renderer/rendering_method.mobile="gl_compatibility"
+environment/defaults/default_clear_color=Color(0.05, 0.05, 0.07, 1)

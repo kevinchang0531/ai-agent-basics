@@ -11,6 +11,7 @@
 - `index.html`：練習網站首頁
 - `.github/workflows/deploy-pages.yml`：GitHub Pages 自動部署流程
 - `AGENTS.md`：專案協作規範
+- `wuxia_game/`：《江湖俠客行》Godot 4 原創武俠 RPG（說明見 [wuxia_game/README.md](wuxia_game/README.md)）
 
 ## 部署
 
